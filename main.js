@@ -1,12 +1,12 @@
 const { program } = require('commander');
 const http = require('http');
-const fs = require('fs').promises; // Use promises API
+const fs = require('fs').promises; 
 const path = require('path');
 
 program
-  .option('-h, --host <address>', 'адреса сервера', 'localhost')
-  .option('-p, --port <number>', 'порт сервера', 3000)
-  .option('-c, --cache <path>', 'шлях до директорії, яка міститиме закешовані файли');
+  .requiredOption('-h, --host <address>', 'адреса сервера')
+  .requiredOption('-p, --port <number>', 'порт сервера')
+  .requiredOption('-c, --cache <path>', 'шлях до директорії, яка міститиме закешовані файли');
 
 program.parse(process.argv);
 
@@ -28,8 +28,38 @@ const requestListener = async function (req, res) {
           res.writeHead(404);
           res.end();
         });
+        break;
+        case 'PUT':
+          const chunks = [];
+      
+          req.on('data', chunk => {
+              chunks.push(chunk);
+          });
+      
+          req.on('end', async () => {
+              const imageBuffer = Buffer.concat(chunks); 
+      
+              fs.writeFile(filePath, imageBuffer)
+              .then(()=>{
+                res.setHeader("Content-Type", "image/jpeg");
+                  res.writeHead(201);
+                  res.end('Image saved successfully.');
+              })
+              .catch(err=>{
+                console.error('Error saving image:', err);
+                res.writeHead(500);
+                res.end('Error saving image.');
+              })
+          });
+      
+          req.on('error', (err) => {
+              console.error('Request error:', err);
+              res.writeHead(400); // Неправильний запит
+              res.end('Bad request.');
+          });
+          break;
+        }
       }
-}
 
   
 
