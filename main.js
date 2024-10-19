@@ -2,7 +2,6 @@ const { program } = require('commander');
 const http = require('http');
 const fs = require('fs').promises; 
 const path = require('path');
-const { cwd } = require('process');
 const superagent = require('superagent');
 
 program
@@ -91,6 +90,7 @@ const requestListener = async function (req, res) {
               console.error('Wrong method');
               res.writeHead(405);
               res.end();
+              break;
         }
       }
 
