@@ -2,6 +2,8 @@ const { program } = require('commander');
 const http = require('http');
 const fs = require('fs').promises; 
 const path = require('path');
+const { cwd } = require('process');
+const superagent = require('superagent');
 
 program
   .requiredOption('-h, --host <address>', 'адреса сервера')
@@ -19,24 +21,38 @@ const requestListener = async function (req, res) {
     case 'GET':
         fs.readFile(filePath)
         .then(content => {
+          console.log('Картинку взято з кешу');
           res.setHeader("Content-Type", "image/jpeg");
           res.writeHead(200);
           res.end(content);
         })
-        .catch(() => {
-          console.error('No picture in cache:', filePath);
-          res.writeHead(404);
-          res.end();
+        .catch(async () => {
+          try {
+            const content = await superagent.get(path.join('https://http.cat/' + req.url));
+            await fs.writeFile(filePath, content.body);
+            console.log('Картинку взято з сайту');
+            res.setHeader("Content-Type", "image/jpeg");
+            res.writeHead(200);
+            res.end(content.body);
+          } catch (err) {
+            console.log('Запит закінчився помилкою');
+            console.log(err);
+            res.writeHead(404);
+            res.end();
+          }
         });
         break;
         case 'PUT':
           const chunks = [];
       
+          //використовуємо масив якщо дані у запиті великі за розміром і їх не можливо отримати за один раз
           req.on('data', chunk => {
               chunks.push(chunk);
           });
       
+        
           req.on('end', async () => {
+            //створюємо картинку з фрагментів
               const imageBuffer = Buffer.concat(chunks); 
       
               fs.writeFile(filePath, imageBuffer)
