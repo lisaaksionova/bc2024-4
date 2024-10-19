@@ -1,5 +1,4 @@
 const { program } = require('commander');
-const { error } = require('console');
 const http = require('http');
 const fs = require('fs').promises; 
 const path = require('path');
@@ -63,15 +62,19 @@ const requestListener = async function (req, res) {
             fs.unlink(filePath)
             .then(()=>{
               res.setHeader("Content-Type", "text/plain");
-                  res.writeHead(201);
-                  res.end('Image saved successfully.');
+                  res.writeHead(200);
+                  res.end('Image deleted successfully.');
             })
-            .catch(error =>{
-              console.error('Request error:', error);
-              res.writeHead(400);
-              res.end('Bad request.');
+            .catch(() =>{
+              console.error('No picture in cache:', filePath);
+              res.writeHead(404);
+              res.end();
             });
             break;
+            default:
+              console.error('Wrong method');
+              res.writeHead(405);
+              res.end();
         }
       }
 
